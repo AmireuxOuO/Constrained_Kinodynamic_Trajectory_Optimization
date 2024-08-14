@@ -7,11 +7,12 @@
 ## Demo
 The repository includes demo implementations for the following robotic systems:
 
-- **UR5**: A simple 6-DOF robotic arm.
+- **UR10**: Simple unconstrained system.
 - **Four-bar Parallel Robot**: System with holonomic constraints.
 
 ### TODO
-- [ ] Systems with non-holonomic constriants
+- [ ] Systems with non-holonomic constriants.
+- [ ] Differentiable collision detection.
 
 ## Reference
 - Haug, Edward J. "Multibody dynamics on differentiable manifolds." Journal of Computational and Nonlinear Dynamics. 2021. https://doi.org/10.1115/1.4049995
