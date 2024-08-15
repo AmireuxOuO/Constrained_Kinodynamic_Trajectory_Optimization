@@ -16,7 +16,7 @@ robot:
 
             base_link: "base_link"
             ee_link: "tool0"
-            link_names: null
+            link_names: ['shoulder_link', 'upper_arm_link', 'forearm_link', 'wrist_1_link', 'wrist_2_link', 'wrist_3_link']
             lock_joints: null
             extra_links: null
 
@@ -29,7 +29,7 @@ robot:
             self_collision_buffer: null # Dict[str, float]
 
             use_global_cumul: True
-            mesh_link_names: null # List[str]
+            mesh_link_names: ['shoulder_link', 'upper_arm_link', 'forearm_link', 'wrist_1_link', 'wrist_2_link', 'wrist_3_link']  # List[str]
 
             cspace:
                 joint_names: ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint', 'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint']
@@ -47,5 +47,5 @@ env:
     pose: [0.5, 0.5, 0.5, 1, 0, 0, 0]
 
   - type: 'Sphere'
-    dim: 0.1
-    pose: [0.5, 0.5, 0.5, 1, 0, 0, 0]
+    dim: 0.05
+    pose: [0.2, 0.0, -0.1, 1, 0, 0, 0]
