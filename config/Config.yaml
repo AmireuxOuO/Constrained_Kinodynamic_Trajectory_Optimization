@@ -1,6 +1,6 @@
 robot:
   pinocchio_config:
-    urdf_path: "/home/angie/Project/curobo/src/curobo/content/assets/robot/ur_description/ur5e.urdf" # Adjust this path to your own
+    urdf_path: "/home/angie/Projects/curobo/src/curobo/content/assets/robot/ur_description/ur5e.urdf" # Adjust this path to your own
     robex: null
   curobo_config:
     robot_cfg:

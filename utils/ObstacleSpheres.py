@@ -79,19 +79,7 @@ class ObsConfig:
         return robot_sphere_list
         
 
-    def update_robot_spheres(self, q, cmodel, cdata):
-        Frames = get_link_kinematics(q, cmodel, cdata)        
-        spheres = [
-            [
-                sphere(
-                    radius = self.robot_sphere_list[i][j].radius,
-                    pos = (Frames[i].rotation @ np.array(self.robot_sphere_list[i][j].pos[:3])) + Frames[i].translation
-                )
-                for j in range(len(self.robot_sphere_list[i]))
-            ]
-            for i in range(len(Frames))
-        ]
-        return spheres
+
 
     def spheres_from_env(self):
         env_sphere_list = []
@@ -130,19 +118,26 @@ class ObsConfig:
         self.env_sphere_list = env_sphere_list
         return env_sphere_list
 
-    def update_env_spheres(self, _):
-        spheres = [
-            type(sphere)(
-                    radius =  self.env_sphere_list[i].radius,
-                    pos = np.array(self.env_sphere_list[i].pose[:3])
-            )  
-            for i in range(len(self.env_sphere_list))
+
+def update_robot_spheres(robot_sphere_list, cmodel, cdata, q):
+    Frames = get_link_kinematics(cmodel, cdata, q)        
+    spheres = [
+        [
+            sphere(
+                radius = robot_sphere_list[i][j].radius,
+                pos = (Frames[i].rotation @ np.array(robot_sphere_list[i][j].pos[:3])) + Frames[i].translation
+            )
+            for j in range(len(robot_sphere_list[i]))
         ]
+        for i in range(len(Frames))
+    ]
+    return spheres            
 
-        return spheres
-            
+# For dynamic env obstacles
+#def update_env_spheres():
 
-def get_link_kinematics(q, cmodel, cdata):
+
+def get_link_kinematics(cmodel, cdata, q):
     cpin.framesForwardKinematics(cmodel, cdata, q)
     Frames = [None] * cmodel.nq
     for i in range(0, cmodel.nq):
@@ -150,8 +145,9 @@ def get_link_kinematics(q, cmodel, cdata):
     return Frames
 
 
-def get_obstacle_distances(env_spheres, robot_spheres):
-    res = [ [None] * len(robot_spheres[i]) for i in range(len(robot_spheres)) ]
+def obstacle_distances(env_spheres, robot_spheres, cmodel, cdata, q):
+    robot_spheres = update_robot_spheres(robot_spheres, cmodel, cdata, q)
+    dis = []
     for i in range(len(robot_spheres)):
         for j in range(len(robot_spheres[i])):
             robot_sphere = robot_spheres[i][j]
@@ -159,9 +155,7 @@ def get_obstacle_distances(env_spheres, robot_spheres):
             for k in range(len(env_spheres)):
                 env_sphere = env_spheres[k]
                 dis.append((robot_sphere.pos - env_sphere.pos).T @ (robot_sphere.pos - env_sphere.pos) -  (robot_sphere.radius + env_sphere.radius)**2)
-            
-            res[i][j] = casadi.vertcat(*dis)
-    return res
+    return dis
             
 
 
