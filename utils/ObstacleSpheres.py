@@ -30,27 +30,37 @@ class ObsConfig:
         else:
             raise ValueError(f'Invalid file path: {yaml_file_path}')
 
-    def spheres_from_robot(self, q0=None):
+    def spheres_from_robot(self, q0:List[float] = None, n_spheres:List[int] = None):
         robot_config = self.robot_config['curobo_config']
         if isinstance(robot_config, str):
             robot_config = load_yaml(join_path(get_robot_configs_path(), robot_config))["robot_cfg"]
         if isinstance(robot_config, Dict):
             if "robot_cfg" in robot_config:
                 robot_config = robot_config["robot_cfg"]
-        
+
         if robot_config["kinematics"].get("collision_spheres") is not None:
-            if isinstance(robot_config["kinematics"]["collision_spheres"],Dict):
+            """
+            robot_config = RobotConfig.from_dict(robot_config, TensorDeviceType())
+            kinematics = CudaRobotModel(robot_config.kinematics)        
+            robot_sphere_list = kinematics.get_robot_as_spheres(torch.tensor(q0).to('cuda'))[0] 
+            robot_sphere_list =[   # in world frame
+                sphere(
+                        radius = sphere_i.radius,
+                        pos = np.array(sphere_i.pose[:3])
+                    )  
+                for sphere_i in robot_sphere_list
+            ]
+            """
+            
+            if isinstance(robot_config["kinematics"]["collision_spheres"], Dict):
                 dict_collision_spheres = robot_config["kinematics"]["collision_spheres"]
-            elif isinstance(robot_config["kinematics"]["collision_spheres"],str):
+            elif isinstance(robot_config["kinematics"]["collision_spheres"], str):
                 dict_collision_spheres = load_yaml(join_path(get_robot_configs_path(), 
                                                         robot_config["kinematics"]["collision_spheres"]))["collision_spheres"]
             else:
                 raise ValueError(f'Invalid format for collision_spheres')
 
-            for _, link in dict_collision_spheres.items():
-                print(link)
-
-            robot_sphere_list =[
+            robot_sphere_list =[   # in joint frame
                 [
                     sphere(
                         radius = sphere_i['radius'],
@@ -60,20 +70,19 @@ class ObsConfig:
                 ]
                 for _, link in dict_collision_spheres.items() # link is a list
             ]
+            
 
-        else:
+        else:  # Bugs exist
             robot_config = RobotConfig.from_dict(robot_config, TensorDeviceType())
             kinematics = CudaRobotModel(robot_config.kinematics)
             
             robot_mesh_list = kinematics.get_robot_as_mesh(torch.tensor(q0).to('cuda'))  # List[Mesh], type Mesh in cuRobo
             robot_sphere_list = [None]*len(robot_mesh_list)
-
             for i in range(len(robot_mesh_list)):
-                trimesh = robot_mesh_list[i].get_trimesh_mesh()
-                n_pts, n_radius = fit_spheres_to_mesh(mesh=trimesh, n_spheres=2)
-                print(n_radius)
+                trimesh = robot_mesh_list[i].get_trimesh_mesh()        
+                n_pts, n_radius = fit_spheres_to_mesh(mesh = trimesh, n_spheres = n_spheres[i])
                 robot_sphere_list[i] = [sphere(radius = n_radius[i],pos = np.array(n_pts[i]))
-                        for i in range(2)]  # sphere_i is a dict
+                        for i in range(n_spheres[i])]  # sphere_i is a dict
             
         self.robot_sphere_list = robot_sphere_list
         return robot_sphere_list
@@ -119,8 +128,8 @@ class ObsConfig:
         return env_sphere_list
 
 
-def update_robot_spheres(robot_sphere_list, cmodel, cdata, q):
-    Frames = get_link_kinematics(cmodel, cdata, q)        
+def update_robot_spheres(robot_sphere_list, cmodel, cdata, cq):
+    Frames = get_link_kinematics(cmodel, cdata, cq)        
     spheres = [
         [
             sphere(
@@ -137,21 +146,21 @@ def update_robot_spheres(robot_sphere_list, cmodel, cdata, q):
 #def update_env_spheres():
 
 
-def get_link_kinematics(cmodel, cdata, q):
-    cpin.framesForwardKinematics(cmodel, cdata, q)
+def get_link_kinematics(cmodel, cdata, cq):
+    cpin.framesForwardKinematics(cmodel, cdata, cq)
+    cpin.updateFramePlacements(cmodel, cdata)
     Frames = [None] * cmodel.nq
     for i in range(0, cmodel.nq):
-        Frames[i] = cdata.oMi[i]
+        Frames[i] = cdata.oMi[i+1]
     return Frames
 
 
-def obstacle_distances(env_spheres, robot_spheres, cmodel, cdata, q):
-    robot_spheres = update_robot_spheres(robot_spheres, cmodel, cdata, q)
+def obstacle_distances(env_spheres, robot_spheres, cmodel, cdata, cq):
+    robot_spheres = update_robot_spheres(robot_spheres, cmodel, cdata, cq)
     dis = []
     for i in range(len(robot_spheres)):
         for j in range(len(robot_spheres[i])):
             robot_sphere = robot_spheres[i][j]
-            dis = []
             for k in range(len(env_spheres)):
                 env_sphere = env_spheres[k]
                 dis.append((robot_sphere.pos - env_sphere.pos).T @ (robot_sphere.pos - env_sphere.pos) -  (robot_sphere.radius + env_sphere.radius)**2)

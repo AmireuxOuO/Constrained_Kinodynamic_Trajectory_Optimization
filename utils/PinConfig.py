@@ -11,14 +11,13 @@ def PinConfig(yaml_file_path):
         raise ValueError(f'Invalid file path: {yaml_file_path}')
     
     config = config["robot"]["pinocchio_config"]
-    if "robex" in config:
-        robot = robex.load(config["robex"])
-        model = robot.model
-        data = robot.data
+    if "urdf_path" in config:
+        model = pin.buildModelFromUrdf(config["urdf_path"])
+        data = model.createData()
         cmodel = cpin.Model(model)
         cdata = cmodel.createData()
-    elif "urdf_path" in config:
-        robot = pin.buildModelFromUrdf(config["urdf_path"])
+    elif "robex" in config:
+        robot = robex.load(config["robex"])
         model = robot.model
         data = robot.data
         cmodel = cpin.Model(model)
@@ -26,4 +25,4 @@ def PinConfig(yaml_file_path):
     else:
         raise ValueError(f'Invalid configuration.')
     
-    return robot, model, data, cmodel, cdata
+    return model, data, cmodel, cdata
