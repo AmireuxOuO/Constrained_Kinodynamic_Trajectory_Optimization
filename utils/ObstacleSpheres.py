@@ -1,8 +1,6 @@
 import yaml
 import torch
-from typing import Dict, List, Optional, Tuple, Union
-from pinocchio import casadi as cpin
-import casadi
+from typing import Dict, List
 import numpy as np
 from curobo.geom.types import Sphere, Mesh, Cuboid, Capsule, Cylinder
 from curobo.geom.sphere_fit import fit_spheres_to_mesh
@@ -19,6 +17,9 @@ class sphere:
 
 
 class ObsConfig:
+    robot_spheres: List[List[sphere]] =None
+    env_spheres: List[sphere] =None
+    
     def __init__(self, yaml_file_path):
         if isinstance(yaml_file_path, str):
             with open(yaml_file_path, 'r') as file:
@@ -84,7 +85,7 @@ class ObsConfig:
                 robot_sphere_list[i] = [sphere(radius = n_radius[i],pos = np.array(n_pts[i]))
                         for i in range(n_spheres[i])]  # sphere_i is a dict
             
-        self.robot_sphere_list = robot_sphere_list
+        self.robot_spheres = robot_sphere_list
         return robot_sphere_list
         
 
@@ -124,12 +125,27 @@ class ObsConfig:
             else:
                 raise ValueError(f'Unsupported type {ob["type"]}')
             """
-        self.env_sphere_list = env_sphere_list
+        self.env_spheres = env_sphere_list
         return env_sphere_list
 
 
-def update_robot_spheres(robot_sphere_list, cmodel, cdata, cq):
-    Frames = get_link_kinematics(cmodel, cdata, cq)        
+"""
+def get_link_kinematics(model, data, q):
+    if type(q) == np.ndarray:
+        pin.framesForwardKinematics(model, data, q)
+        Frames = [None] * model.nq
+        for i in range(0, model.nq):
+            Frames[i] = data.oMi[i+1]
+    else:
+        cpin.framesForwardKinematics(model, data, q)
+        Frames = [None] * model.nq
+        for i in range(0, model.nq):
+            Frames[i] = data.oMi[i+1]
+    return Frames
+
+
+def update_robot_spheres(robot_sphere_list, model, data, q) -> List[List[sphere]]:
+    Frames = get_link_kinematics(model, data, q)        
     spheres = [
         [
             sphere(
@@ -143,20 +159,11 @@ def update_robot_spheres(robot_sphere_list, cmodel, cdata, cq):
     return spheres            
 
 # For dynamic env obstacles
-#def update_env_spheres():
+# pass
 
 
-def get_link_kinematics(cmodel, cdata, cq):
-    cpin.framesForwardKinematics(cmodel, cdata, cq)
-    cpin.updateFramePlacements(cmodel, cdata)
-    Frames = [None] * cmodel.nq
-    for i in range(0, cmodel.nq):
-        Frames[i] = cdata.oMi[i+1]
-    return Frames
-
-
-def obstacle_distances(env_spheres, robot_spheres, cmodel, cdata, cq):
-    robot_spheres = update_robot_spheres(robot_spheres, cmodel, cdata, cq)
+def obstacle_distances(env_spheres, robot_spheres, model, data, q):
+    robot_spheres = update_robot_spheres(robot_spheres, model, data, q)
     dis = []
     for i in range(len(robot_spheres)):
         for j in range(len(robot_spheres[i])):
@@ -167,4 +174,7 @@ def obstacle_distances(env_spheres, robot_spheres, cmodel, cdata, cq):
     return dis
             
 
-
+def collision_status(env_spheres, robot_spheres, model, data, q:np.ndarray) -> bool:
+    dis = obstacle_distances(env_spheres, robot_spheres, model, data, q)
+    return any([d < 0 for d in dis])
+"""

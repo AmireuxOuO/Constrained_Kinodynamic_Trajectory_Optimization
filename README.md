@@ -1,6 +1,6 @@
 # Constrained Kinodynamic Trajectory Optimization
 
-The optimization problems are discretized using collocation methods and formulated as nonlinear programming (NLP) problems.
+Optimal control problems (OCP) are discretized and formulated as nonlinear programming (NLP) problems.
 
 ## Dependencies
 
@@ -12,15 +12,20 @@ To get started, ensure the following dependencies are already installed:
 
 ## Demo
 
+### Algorithms
+
++ Direct discretization of optimal control problems using Gauss-Legendre collocation method.
++ Constrained dynamics on configuration manifolds using local parametrization on targent charts.
++ Initial guesses for NLP with collision avoidance using RRT path planning.
+
 The repository includes demo implementations for the following robotic systems:
 
-- Simple unconstrained systems   <-   UR10 demo
-- Unconstrained systems with collision avoidance   <-   UR5 demo
-- Systems with holonomic constraints   <-   four-bar parallel robot demo
+- Simple unconstrained systems (with collision avoidance)   ->   UR demo
+- Systems with holonomic constraints   ->   four-bar parallel robot demo
 
 ### TODO
 
-- [ ]  Differentiable collision detection for general geometries, i.e., cuboids, cylinders, meshes, etc.
+- [ ]  General collision geometries, i.e., cuboids, cylinders, meshes, etc.
 - [ ]  Systems with non-holonomic constriants.
 
 ## Reference
