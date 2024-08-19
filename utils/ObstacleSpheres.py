@@ -30,8 +30,29 @@ class ObsConfig:
                 self.env_config = config["env"]
         else:
             raise ValueError(f'Invalid file path: {yaml_file_path}')
+    
 
-    def spheres_from_robot(self, q0:List[float] = None, n_spheres:List[int] = None):
+    def spheres_from_robot_in_world(self, q) -> List[sphere]:
+        robot_config = self.robot_config['curobo_config']
+        if isinstance(robot_config, str):
+            robot_config = load_yaml(join_path(get_robot_configs_path(), robot_config))["robot_cfg"]
+        if isinstance(robot_config, Dict):
+            if "robot_cfg" in robot_config:
+                robot_config = robot_config["robot_cfg"]
+        robot_config = RobotConfig.from_dict(robot_config, TensorDeviceType())
+        kinematics = CudaRobotModel(robot_config.kinematics)        
+        robot_sphere_list = kinematics.get_robot_as_spheres(torch.tensor(np.float32(q)).to('cuda'))[0] 
+        robot_spheres =[   # in world frame
+            sphere(
+                    radius = sphere_i.radius,
+                    pos = np.array(sphere_i.pose[:3])
+                )  
+            for sphere_i in robot_sphere_list
+        ]
+        return robot_spheres
+
+
+    def spheres_from_robot(self, q0:List[float] = None, n_spheres:List[int] = None) -> List[List[sphere]]: 
         robot_config = self.robot_config['curobo_config']
         if isinstance(robot_config, str):
             robot_config = load_yaml(join_path(get_robot_configs_path(), robot_config))["robot_cfg"]
@@ -40,19 +61,6 @@ class ObsConfig:
                 robot_config = robot_config["robot_cfg"]
 
         if robot_config["kinematics"].get("collision_spheres") is not None:
-            """
-            robot_config = RobotConfig.from_dict(robot_config, TensorDeviceType())
-            kinematics = CudaRobotModel(robot_config.kinematics)        
-            robot_sphere_list = kinematics.get_robot_as_spheres(torch.tensor(q0).to('cuda'))[0] 
-            robot_sphere_list =[   # in world frame
-                sphere(
-                        radius = sphere_i.radius,
-                        pos = np.array(sphere_i.pose[:3])
-                    )  
-                for sphere_i in robot_sphere_list
-            ]
-            """
-            
             if isinstance(robot_config["kinematics"]["collision_spheres"], Dict):
                 dict_collision_spheres = robot_config["kinematics"]["collision_spheres"]
             elif isinstance(robot_config["kinematics"]["collision_spheres"], str):
@@ -90,8 +98,7 @@ class ObsConfig:
         
 
 
-
-    def spheres_from_env(self):
+    def spheres_from_env(self) -> List[sphere]:
         env_sphere_list = []
         for i, ob in enumerate(self.env_config):
             if "pose" in ob:   # format [List[float]] = [x y z qw qx qy qz]
@@ -127,6 +134,11 @@ class ObsConfig:
             """
         self.env_spheres = env_sphere_list
         return env_sphere_list
+
+
+
+
+
 
 
 """

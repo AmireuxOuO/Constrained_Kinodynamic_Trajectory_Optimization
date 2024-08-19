@@ -16,7 +16,6 @@ To get started, ensure the following dependencies are already installed:
 
 + Direct discretization of optimal control problems using Gauss-Legendre collocation method.
 + Constrained dynamics on configuration manifolds using local parametrization on targent charts.
-+ Initial guesses for NLP with collision avoidance using RRT path planning.
 
 The repository includes demo implementations for the following robotic systems:
 
@@ -25,6 +24,7 @@ The repository includes demo implementations for the following robotic systems:
 
 ### TODO
 
+- [ ]  RRT path planning for generating initial guesses in NLP with collision avoidance.
 - [ ]  General collision geometries, i.e., cuboids, cylinders, meshes, etc.
 - [ ]  Systems with non-holonomic constriants.
 
