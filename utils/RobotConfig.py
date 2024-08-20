@@ -27,8 +27,8 @@ class RobotConfig:
     upperTorqueLimit: np.ndarray = None
     lowerTorqueLimit: np.ndarray = None
 
-    def __init__(self, yaml_file_path):
-        self.model, self.data, self.cmodel, self.cdata = PinConfig(yaml_file_path)
+    def __init__(self, yaml_file_path, type = 'urdf'):
+        self.model, self.data, self.cmodel, self.cdata = PinConfig(yaml_file_path, type)
         self.ndof = self.model.nq
         self.upperPositionLimit = self.model.upperPositionLimit
         self.lowerPositionLimit = self.model.lowerPositionLimit
@@ -125,7 +125,7 @@ class RobotConfig:
 
 
 
-def PinConfig(yaml_file_path):
+def PinConfig(yaml_file_path, type):
     if isinstance(yaml_file_path, str):
             with open(yaml_file_path, 'r') as file:
                 config = yaml.safe_load(file)
@@ -133,7 +133,7 @@ def PinConfig(yaml_file_path):
         raise ValueError(f'Invalid file path: {yaml_file_path}')
     
     config = config["robot"]["pinocchio_config"]
-    if "urdf_path" in config:
+    if "urdf_path" in config and type == 'urdf':
         model = pin.buildModelFromUrdf(config["urdf_path"])
         data = model.createData()
         cmodel = cpin.Model(model)
