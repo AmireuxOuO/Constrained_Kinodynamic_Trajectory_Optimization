@@ -1,0 +1,16 @@
+robot:
+  pinocchio_config:
+    urdf_path: "/home/angie/Projects/curobo/src/curobo/content/assets/robot/ur_description/ur5e.urdf"
+    robex: "ur5"
+  curobo_config: "ur5e.yml"
+
+
+
+env:
+  - type: 'Sphere'
+    dim: 0.05
+    pose: [0.45, -0.1, -0.4, 1, 0, 0, 0]
+
+  - type: 'Sphere'
+    dim: 0.05
+    pose: [0.6, 0.0, -0.25, 1, 0, 0, 0]
