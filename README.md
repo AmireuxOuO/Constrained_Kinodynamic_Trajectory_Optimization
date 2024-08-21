@@ -20,7 +20,7 @@ To get started, ensure the following dependencies are already installed:
 The repository includes demo implementations for the following robotic systems:
 
 - Simple unconstrained systems (with collision avoidance)   ->   UR demo
-- Systems with holonomic constraints   ->   four-bar parallel robot demo
+- Systems with holonomic constraints   ->   five-bar parallel robot demo
 
 ### TODO
 
